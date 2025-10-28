@@ -1,101 +1,656 @@
-;; Comprehensive Razor syntax highlighting
-;; Based on tree-sitter-razor grammar
+; inherits: c_sharp
 
-;; ============================================================================
-;; COMMENTS
-;; ============================================================================
+[
+  (razor_comment)
+  (html_comment)
+] @comment
 
-(razor_comment) @comment
-(html_comment) @comment
-(comment) @comment
+; HTML elements (basic highlighting)
+(element) @none
 
-;; ============================================================================
-;; DIRECTIVES - These are Razor-specific, always highlight as keywords
-;; ============================================================================
+; Razor HTML attributes - these are the exposed nodes
+(razor_html_attribute
+  (razor_attribute_name) @attribute
+  (razor_attribute_value) @string)
+(razor_attribute_modifier) @function.method
+(attribute_list) @attribute
+(modifier) @keyword.modifier
 
-;; Page-level directives
-(razor_page_directive) @keyword
-(razor_using_directive) @keyword
-(razor_model_directive) @keyword
-(razor_inject_directive) @keyword
-(razor_layout_directive) @keyword
-(razor_inherits_directive) @keyword
-(razor_attribute_directive) @keyword
-(razor_implements_directive) @keyword
-(razor_namespace_directive) @keyword
-(razor_typeparam_directive) @keyword
-(razor_preservewhitespace_directive) @keyword
-(razor_rendermode_directive) @keyword
+; Directive nodes
+[
+  (razor_page_directive)
+  (razor_using_directive)
+  (razor_using_directive
+    (qualified_name qualifier: (identifier) @keyword.import))
+  (razor_model_directive)
+  (razor_rendermode_directive)
+  (razor_inject_directive)
+  (razor_implements_directive)
+  (razor_layout_directive)
+  (razor_inherits_directive)
+  (razor_attribute_directive)
+  (razor_typeparam_directive)
+  (razor_namespace_directive)
+  (razor_preservewhitespace_directive)
+  (razor_block)
+  (razor_escape)
+  (explicit_line_transition)
 
-;; ============================================================================
-;; CODE BLOCKS AND SECTIONS
-;; ============================================================================
+  ; C# preprocessor support
+  (preproc_if)
+  (preproc_define)
+  (preproc_region)
+  (preproc_endregion)
+] @constant.macro
 
-(razor_block) @keyword
-(razor_section) @keyword
+; Control flow directives
+[
+  (razor_lock)
+  (razor_section)
+] @keyword
 
-;; ============================================================================
-;; CONTROL STRUCTURES - Highlight as keywords since they're Razor-specific
-;; ============================================================================
+; Conditional directives
+[
+  (razor_if)
+  (razor_switch)
+] @keyword.conditional
 
-;; Conditionals
-(razor_if) @keyword
-(razor_else_if) @keyword
-(razor_else) @keyword
+; Loop directives
+[
+  (razor_for)
+  (razor_foreach)
+  (razor_while)
+  (razor_do_while)
+] @keyword.repeat
 
-;; Switches
-(razor_switch) @keyword
-(razor_switch_case) @keyword
-(razor_switch_default) @keyword
+; Exception handling
+[
+  (razor_try)
+  (razor_catch)
+  (razor_finally)
+] @keyword.exception
 
-;; Loops
-(razor_for) @keyword
-(razor_foreach) @keyword
-(razor_while) @keyword
-(razor_do_while) @keyword
+; Expressions
+[
+  (razor_implicit_expression)
+  (razor_explicit_expression)
+] @variable
 
-;; Try/Catch/Finally
-(razor_try) @keyword
-(razor_catch) @keyword
-(razor_finally) @keyword
+(razor_await_expression) @keyword.coroutine
 
-;; Other control structures
-(razor_lock) @keyword
-(razor_compound_using) @keyword
+; Special nodes
+(razor_rendermode) @property
 
-;; ============================================================================
-;; EXPRESSIONS AND TRANSITIONS
-;; ============================================================================
+[
+  (identifier)
+  (preproc_arg)
+] @variable
 
-;; Razor expression markers
-(razor_explicit_expression) @punctuation.bracket
-(razor_implicit_expression) @punctuation.bracket
-(razor_await_expression) @keyword
-(explicit_line_transition) @keyword
+((preproc_arg) @constant.macro)
 
-;; Escape sequences
-(razor_escape) @string.escape
+((identifier) @keyword
+  (#eq? @keyword "value")
+  (#has-ancestor? @keyword accessor_declaration))
 
-;; ============================================================================
-;; HTML ELEMENTS
-;; ============================================================================
+(method_declaration
+  name: (identifier) @function.method)
 
-(element) @tag
+(local_function_statement
+  name: (identifier) @function.method)
 
-;; ============================================================================
-;; C# LITERALS AND KEYWORDS (inherited from C# grammar through injection)
-;; ============================================================================
+(method_declaration
+  returns: [
+    (identifier) @type
+    (generic_name
+      (identifier) @type)
+  ])
 
-;; Strings
-(string_literal) @string
-(verbatim_string_literal) @string
-(raw_string_literal) @string
+(event_declaration
+  type: (identifier) @type)
 
-;; Numbers
+(event_declaration
+  name: (identifier) @variable.member)
+
+(event_field_declaration
+  (variable_declaration
+    (variable_declarator
+      name: (identifier) @variable.member)))
+
+(declaration_pattern
+  type: (identifier) @type)
+
+(local_function_statement
+  type: (identifier) @type)
+
+(interpolation) @none
+
+(member_access_expression
+  name: (identifier) @variable.member)
+
+(invocation_expression
+  (member_access_expression
+    name: (identifier) @function.method.call))
+
+(invocation_expression
+  function: (conditional_access_expression
+    (member_binding_expression
+      name: (identifier) @function.method.call)))
+
+(namespace_declaration
+  name: [
+    (qualified_name)
+    (identifier)
+  ] @module)
+
+(qualified_name
+  (identifier) @type)
+
+(namespace_declaration
+  name: (identifier) @module)
+
+(file_scoped_namespace_declaration
+  name: (identifier) @module)
+
+(qualified_name
+  (identifier) @module
+  (#not-has-ancestor? @module method_declaration)
+  (#not-has-ancestor? @module record_declaration)
+  (#has-ancestor? @module namespace_declaration file_scoped_namespace_declaration))
+
+(invocation_expression
+  (identifier) @function.method.call)
+
+(field_declaration
+  (variable_declaration
+    (variable_declarator
+      (identifier) @variable.member)))
+
+(initializer_expression
+  (assignment_expression
+    left: (identifier) @variable.member))
+
+(parameter
+  name: (identifier) @variable.parameter)
+
+(parameter_list
+  name: (identifier) @variable.parameter)
+
+(bracketed_parameter_list
+  name: (identifier) @variable.parameter)
+
+(implicit_parameter) @variable.parameter
+
+(parameter_list
+  (parameter
+    type: (identifier) @type))
+
 (integer_literal) @number
-(real_literal) @number
 
-;; Constants
-(boolean_literal) @constant
-(null_literal) @constant
-(character_literal) @string
+(real_literal) @number.float
+
+(null_literal) @constant.builtin
+
+(calling_convention
+  [
+    (identifier)
+    "Cdecl"
+    "Stdcall"
+    "Thiscall"
+    "Fastcall"
+  ] @attribute.builtin)
+
+(character_literal) @character
+
+[
+  (string_literal)
+  (raw_string_literal)
+  (verbatim_string_literal)
+  (interpolated_string_expression)
+] @string
+
+(escape_sequence) @string.escape
+
+[
+  "true"
+  "false"
+] @boolean
+
+(predefined_type) @type.builtin
+
+(implicit_type) @keyword
+
+(comment) @comment @spell
+
+((comment) @comment.documentation)
+
+((comment) @comment.documentation)
+
+((comment) @comment.documentation)
+
+(using_directive
+  (identifier) @type)
+
+(using_directive
+  (type) @type.definition)
+
+(property_declaration
+  name: (identifier) @property)
+
+(property_declaration
+  type: (identifier) @type)
+
+(nullable_type
+  type: (identifier) @type)
+
+(array_type
+  type: (identifier) @type)
+
+(ref_type
+  type: (identifier) @type)
+
+(pointer_type
+  type: (identifier) @type)
+
+(catch_declaration
+  type: (identifier) @type)
+
+(interface_declaration
+  name: (identifier) @type)
+
+(class_declaration
+  name: (identifier) @type)
+
+(record_declaration
+  name: (identifier) @type)
+
+(struct_declaration
+  name: (identifier) @type)
+
+(enum_declaration
+  name: (identifier) @type)
+
+(enum_member_declaration
+  name: (identifier) @variable.member)
+
+(operator_declaration
+  type: (identifier) @type)
+
+(conversion_operator_declaration
+  type: (identifier) @type)
+
+(explicit_interface_specifier
+  [
+    (identifier) @type
+    (generic_name
+      (identifier) @type)
+  ])
+
+(explicit_interface_specifier
+  (identifier) @type)
+
+(primary_constructor_base_type
+  type: (identifier) @type)
+
+[
+  "assembly"
+  "module"
+  "this"
+  "base"
+] @variable.builtin
+
+(constructor_declaration
+  name: (identifier) @constructor)
+
+(destructor_declaration
+  name: (identifier) @constructor)
+
+(constructor_initializer
+  "base" @constructor)
+
+(variable_declaration
+  (identifier) @type)
+
+(object_creation_expression
+  (identifier) @type)
+
+; Generic Types.
+(typeof_expression
+  (generic_name
+    (identifier) @type))
+
+(type_argument_list
+  (generic_name
+    (identifier) @type))
+
+(base_list
+  (generic_name
+    (identifier) @type))
+
+(type_parameter_constraint
+  [
+    (identifier) @type
+    (type
+      (generic_name
+        (identifier) @type))
+  ])
+
+(object_creation_expression
+  (generic_name
+    (identifier) @type))
+
+(property_declaration
+  (generic_name
+    (identifier) @type))
+
+(_
+  type: (generic_name
+    (identifier) @type))
+
+; Generic Method invocation with generic type
+(invocation_expression
+  function: (generic_name
+    .
+    (identifier) @function.method.call))
+
+(invocation_expression
+  (member_access_expression
+    (generic_name
+      (identifier) @function.method)))
+
+(base_list
+  (identifier) @type)
+
+(type_argument_list
+  (identifier) @type)
+
+(type_parameter_list
+  (type_parameter) @type)
+
+(type_parameter
+  name: (identifier) @type)
+
+(type_parameter_constraints_clause
+  "where"
+  .
+  (identifier) @type)
+
+(attribute
+  name: (identifier) @attribute)
+
+(foreach_statement
+  type: (identifier) @type)
+
+(goto_statement
+  (identifier) @label)
+
+(labeled_statement
+  (identifier) @label)
+
+(tuple_element
+  type: (identifier) @type)
+
+(tuple_expression
+  (argument
+    (declaration_expression
+      type: (identifier) @type)))
+
+(cast_expression
+  type: (identifier) @type)
+
+(lambda_expression
+  type: (identifier) @type)
+
+(as_expression
+  right: (identifier) @type)
+
+(typeof_expression
+  (identifier) @type)
+
+(preproc_error) @keyword.exception
+
+[
+  "#define"
+  "#undef"
+] @keyword.directive.define
+
+[
+  "#if"
+  "#elif"
+  "#else"
+  "#endif"
+  "#region"
+  "#endregion"
+  "#line"
+  "#pragma"
+  "#nullable"
+  "#error"
+  (shebang_directive)
+] @keyword.directive
+
+[
+  (preproc_line)
+  (preproc_pragma)
+  (preproc_nullable)
+] @constant.macro
+
+(preproc_pragma
+  (identifier) @constant)
+
+(preproc_if
+  (identifier) @constant)
+
+[
+  "if"
+  "else"
+  "switch"
+  "break"
+  "case"
+  "when"
+] @keyword.conditional
+
+[
+  "while"
+  "for"
+  "do"
+  "continue"
+  "goto"
+  "foreach"
+] @keyword.repeat
+
+[
+  "try"
+  "catch"
+  "throw"
+  "finally"
+] @keyword.exception
+
+[
+  "+"
+  "?"
+  ":"
+  "++"
+  "-"
+  "--"
+  "&"
+  "&&"
+  "|"
+  "||"
+  "!"
+  "!="
+  "=="
+  "*"
+  "/"
+  "%"
+  "<"
+  "<="
+  ">"
+  ">="
+  "="
+  "-="
+  "+="
+  "*="
+  "/="
+  "%="
+  "^"
+  "^="
+  "&="
+  "|="
+  "~"
+  ">>"
+  ">>>"
+  "<<"
+  "<<="
+  ">>="
+  ">>>="
+  "=>"
+  "??"
+  "??="
+  ".."
+] @operator
+
+(list_pattern
+  ".." @character.special)
+
+(discard) @character.special
+
+[
+  ";"
+  "."
+  ","
+  ":"
+] @punctuation.delimiter
+
+(conditional_expression
+  [
+    "?"
+    ":"
+  ] @keyword.conditional.ternary)
+
+[
+  "["
+  "]"
+  "{"
+  "}"
+  "("
+  ")"
+] @punctuation.bracket
+
+(interpolation_brace) @punctuation.special
+
+(type_argument_list
+  [
+    "<"
+    ">"
+  ] @punctuation.bracket)
+
+[
+  "using"
+  "as"
+] @keyword.import
+
+(alias_qualified_name
+  (identifier
+    "global") @keyword.import)
+
+[
+  "with"
+  "new"
+  "typeof"
+  "sizeof"
+  "is"
+  "and"
+  "or"
+  "not"
+  "stackalloc"
+  "__makeref"
+  "__reftype"
+  "__refvalue"
+  "in"
+  "out"
+  "ref"
+] @keyword.operator
+
+[
+  "lock"
+  "params"
+  "operator"
+  "default"
+  "implicit"
+  "explicit"
+  "override"
+  "get"
+  "set"
+  "init"
+  "where"
+  "add"
+  "remove"
+  "checked"
+  "unchecked"
+  "fixed"
+  "alias"
+  "file"
+  "unsafe"
+] @keyword
+
+(attribute_target_specifier
+  .
+  _ @keyword)
+
+[
+  "enum"
+  "record"
+  "class"
+  "struct"
+  "interface"
+  "namespace"
+  "event"
+  "delegate"
+] @keyword.type
+
+[
+  "async"
+  "await"
+] @keyword.coroutine
+
+[
+  "const"
+  "extern"
+  "readonly"
+  "static"
+  "volatile"
+  "required"
+  "managed"
+  "unmanaged"
+  "notnull"
+  "abstract"
+  "private"
+  "protected"
+  "internal"
+  "public"
+  "partial"
+  "sealed"
+  "virtual"
+  "global"
+] @keyword.modifier
+
+(scoped_type
+  "scoped" @keyword.modifier)
+
+(query_expression
+  (_
+    [
+      "from"
+      "orderby"
+      "select"
+      "group"
+      "by"
+      "ascending"
+      "descending"
+      "equals"
+      "let"
+    ] @keyword))
+
+[
+  "return"
+  "yield"
+] @keyword.return
