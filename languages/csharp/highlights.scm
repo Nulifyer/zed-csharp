@@ -1,57 +1,33 @@
-[
-  (identifier)
-  (preproc_arg)
-] @variable
+; Base identifier rule
+(identifier) @variable
 
-((preproc_arg) @constant.macro)
+; Methods
+(method_declaration name: (identifier) @function.method)
+(local_function_statement name: (identifier) @function.method)
 
-((identifier) @keyword
-  (#eq? @keyword "value")
-  (#has-ancestor? @keyword accessor_declaration))
+; Types (following official tree-sitter-c-sharp patterns)
+(interface_declaration name: (identifier) @type)
+(class_declaration name: (identifier) @type)
+(enum_declaration name: (identifier) @type)
+(struct_declaration name: (identifier) @type)
+(record_declaration name: (identifier) @type)
 
-(method_declaration
-  name: (identifier) @function.method)
+; Generic types
+(generic_name (identifier) @type)
+(type_argument_list (identifier) @type)
 
-(local_function_statement
-  name: (identifier) @function.method)
+; Catch-all for any node with a type field
+(_ type: (identifier) @type)
 
-(method_declaration
-  returns: [
-    (identifier) @type
-    (generic_name
-      (identifier) @type)
-  ])
-
-(event_declaration
-  type: (identifier) @type)
-
-(event_declaration
-  name: (identifier) @variable.member)
-
-(event_field_declaration
-  (variable_declaration
-    (variable_declarator
-      name: (identifier) @variable.member)))
-
-(declaration_pattern
-  type: (identifier) @type)
-
-(local_function_statement
-  type: (identifier) @type)
-
-(interpolation) @none
-
-(member_access_expression
-  name: (identifier) @variable.member)
-
-(invocation_expression
-  (member_access_expression
+; Method calls - must come before member access rules for precedence
+(invocation_expression 
+  function: (member_access_expression 
     name: (identifier) @function.method.call))
 
-(invocation_expression
-  function: (conditional_access_expression
-    (member_binding_expression
-      name: (identifier) @function.method.call)))
+(invocation_expression (member_access_expression name: (identifier) @function.method.call))
+
+; Member access for properties/fields (after method calls)
+(member_access_expression name: (identifier) @variable.member)
 
 (namespace_declaration
   name: [
@@ -229,15 +205,10 @@
 
 ; Object creation with simple types
 (object_creation_expression
-  "new" @keyword)
+  "new" @keyword.modifier)
 
 (object_creation_expression
   (identifier) @type)
-
-; Object creation with qualified names (e.g., new MyClass.NestedClass())
-(object_creation_expression
-  (qualified_name
-    (identifier) @type))
 
 ; Generic Types.
 (typeof_expression
@@ -289,6 +260,8 @@
 
 (type_argument_list
   (identifier) @type)
+
+
 
 (type_parameter_list
   (type_parameter) @type)
