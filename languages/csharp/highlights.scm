@@ -227,8 +227,17 @@
 (variable_declaration
   (identifier) @type)
 
+; Object creation with simple types
+(object_creation_expression
+  "new" @keyword)
+
 (object_creation_expression
   (identifier) @type)
+
+; Object creation with qualified names (e.g., new MyClass.NestedClass())
+(object_creation_expression
+  (qualified_name
+    (identifier) @type))
 
 ; Generic Types.
 (typeof_expression
@@ -251,6 +260,7 @@
         (identifier) @type))
   ])
 
+; Generic object creation
 (object_creation_expression
   (generic_name
     (identifier) @type))
@@ -471,7 +481,6 @@
 
 [
   "with"
-  "new"
   "typeof"
   "sizeof"
   "is"

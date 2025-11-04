@@ -16,27 +16,45 @@
 (attribute_list) @attribute
 (modifier) @keyword.modifier
 
-; Directive nodes
+; Page and configuration directives
 [
   (razor_page_directive)
+  (razor_rendermode_directive)
+] @constant.macro
+
+; Import and dependency directives
+[
   (razor_using_directive)
   (razor_using_directive
     (qualified_name qualifier: (identifier) @keyword.import))
-  (razor_model_directive)
-  (razor_rendermode_directive)
   (razor_inject_directive)
   (razor_implements_directive)
-  (razor_layout_directive)
   (razor_inherits_directive)
+] @keyword.import
+
+; Type and structure directives
+[
+  (razor_model_directive)
+  (razor_layout_directive)
   (razor_attribute_directive)
   (razor_typeparam_directive)
   (razor_namespace_directive)
   (razor_preservewhitespace_directive)
-  (razor_block)
-  (razor_escape)
-  (explicit_line_transition)
+] @keyword.directive
 
-  ; C# preprocessor support
+; Code and content directives
+[
+  (razor_block)
+  (razor_section)
+  (razor_lock)
+  (explicit_line_transition)
+] @keyword
+
+; Razor escapes (like @@media, @@code)
+(razor_escape) @string.escape
+
+; C# preprocessor support
+[
   (preproc_if)
   (preproc_define)
   (preproc_region)
@@ -44,10 +62,6 @@
 ] @constant.macro
 
 ; Control flow directives
-[
-  (razor_lock)
-  (razor_section)
-] @keyword
 
 ; Conditional directives
 [
@@ -77,6 +91,25 @@
 ] @variable
 
 (razor_await_expression) @keyword.coroutine
+
+; Switch case patterns  
+[
+  (razor_switch_case)
+  (razor_switch_default)
+  (razor_case_condition)
+] @keyword.conditional
+
+; Condition expressions
+(razor_condition) @expression
+
+; Switch patterns
+[
+  (razor_else)
+  (razor_else_if)
+] @keyword.conditional
+
+; Compound using statements
+(razor_compound_using) @keyword.import
 
 ; Special nodes
 (razor_rendermode) @property
@@ -552,9 +585,12 @@
   (identifier
     "global") @keyword.import)
 
+; Object creation keyword
+(object_creation_expression
+  "new" @keyword)
+
 [
   "with"
-  "new"
   "typeof"
   "sizeof"
   "is"
@@ -569,6 +605,9 @@
   "out"
   "ref"
 ] @keyword.operator
+
+; Generic new expressions
+"new" @keyword.operator
 
 [
   "lock"

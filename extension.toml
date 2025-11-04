@@ -8,10 +8,11 @@ repository = "https://github.com/Nulifyer/zed-csharp"
 
 [language_servers.csharp-language-server]
 name = "csharp-language-server"
-languages = ["CSharp"]
+languages = ["CSharp", "Razor"]
 
 [language_servers.csharp-language-server.language_ids]
 "CSharp" = "csharp"
+"Razor" = "razor"
 
 [grammars.c_sharp]
 repository = "https://github.com/tree-sitter/tree-sitter-c-sharp"
